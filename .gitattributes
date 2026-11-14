@@ -1,0 +1,4 @@
+# ui/data.js là OUTPUT sinh tự động từ export/export_map_data.py (synthetic) —
+# loại khỏi thống kê ngôn ngữ để language bar phản ánh đúng Python/SQL, không bị JS generated lấn.
+ui/data.js linguist-generated=true
+*.sql linguist-detectable=true

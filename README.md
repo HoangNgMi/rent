@@ -1,5 +1,7 @@
 # RENT — VeriMap Rental OS 🗺️
 
+**Stack:** PostgreSQL · psycopg3 · SQL Views (deal/anti-fake/market) · Python (generator · ETL) · Leaflet + CartoDB · static-first (demo 0-backend) · zero-leakage shield
+
 Nền tảng **Bản đồ Tình báo Thuê nhà & Dữ liệu B2B2C** (HCMC). Lấy cảm hứng giao diện Airbnb nhưng **Map-First**. Định vị: "Đơn vị Cung cấp Dữ liệu & Quảng cáo Công nghệ" (SaaS / Lead Routing), đứng trên vai đội Sales — KHÔNG môi giới trực tiếp.
 
 ## 2 phần
