@@ -3,61 +3,226 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VeriMap Rental OS — Thảo Điền</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<title>VeriMap · Thuê nhà Quận 8 (TP.HCM)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<link rel="stylesheet" href="styles.css">
+<style>
+  :root{ --ab:#E61E4D; --ink:#222; --muted:#717171; --line:#ececec; }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;color:var(--ink);
+    display:flex;flex-direction:column;overflow:hidden;}
+
+  /* ===== Top bar ===== */
+  .topbar{flex:0 0 auto;height:56px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;border-bottom:1px solid var(--line);background:#fff;z-index:1000;}
+  .brand{font-weight:800;font-size:18px;}
+  .brand .v{color:var(--ab);}
+  .brand small{font-weight:600;color:var(--muted);font-size:12px;margin-left:6px;}
+  .topbar a{font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--line);
+    padding:7px 12px;border-radius:20px;font-weight:600;}
+  .topbar a:hover{border-color:#999;color:#222;}
+
+  /* ===== Main split ===== */
+  .main{flex:1 1 auto;display:flex;min-height:0;}
+  .side{width:360px;flex:0 0 360px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:#fff;}
+  .mapwrap{flex:1 1 auto;position:relative;min-width:0;}
+  #map{position:absolute;inset:0;background:#e8eaed;}   /* inset:0 -> chiều cao CHẮC CHẮN, không cần Tailwind */
+
+  /* ===== Sidebar ===== */
+  .sfilter{padding:12px 14px;border-bottom:1px solid var(--line);}
+  .sfilter h1{font-size:16px;margin:0 0 2px;font-weight:800;}
+  .sfilter .sub{font-size:12px;color:var(--muted);margin-bottom:10px;}
+  .sfilter .row{display:flex;gap:8px;}
+  .sfilter select{flex:1;font-size:12.5px;padding:7px 8px;border:1px solid #d8d8d8;border-radius:9px;background:#fff;}
+  .count{font-size:12px;color:var(--muted);padding:8px 14px 2px;}
+  .list{flex:1 1 auto;overflow-y:auto;padding:4px 10px 16px;}
+  .uc{border:1px solid var(--line);border-radius:13px;padding:11px 12px;margin:7px 2px;cursor:pointer;
+    transition:border-color .12s, box-shadow .12s;}
+  .uc:hover{border-color:#bbb;box-shadow:0 2px 10px rgba(0,0,0,.07);}
+  .uc.on{border-color:var(--ab);box-shadow:0 2px 12px rgba(230,30,77,.15);}
+  .uc .r1{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .uc .nm{font-weight:700;font-size:13.5px;line-height:1.25;}
+  .uc .pr{font-weight:800;color:var(--ab);white-space:nowrap;font-size:14px;}
+  .uc .r2{font-size:11.5px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .chip{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:12px;background:#f3f4f6;color:#555;}
+  .chip.v{background:#dcfce7;color:#15803d;}
+
+  /* ===== Map price pins ===== */
+  .q8-pin{background:transparent;border:none;}
+  .q8-dot{background:#fff;border:1px solid #d9d9d9;border-radius:18px;padding:3px 9px;font-size:12px;font-weight:800;
+    color:#222;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.22);text-align:center;transition:all .12s;}
+  .q8-pin.v .q8-dot{border-color:#86efac;}
+  .q8-pin:hover .q8-dot{transform:scale(1.08);border-color:#888;}
+  .q8-pin.on .q8-dot{background:var(--ab);color:#fff;border-color:var(--ab);transform:scale(1.14);box-shadow:0 4px 12px rgba(230,30,77,.4);}
+
+  /* ===== Popup detail ===== */
+  .leaflet-popup-content{margin:12px 14px;min-width:230px;}
+  .pp h3{margin:0 0 2px;font-size:15px;font-weight:800;}
+  .pp .code{font-size:11px;color:var(--muted);font-family:ui-monospace,monospace;}
+  .pp .big{font-size:20px;font-weight:900;color:var(--ab);margin:7px 0 2px;}
+  .pp .small{font-size:11.5px;color:var(--muted);}
+  .pp table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12.5px;}
+  .pp td{padding:3px 0;border-bottom:1px solid #f1f1f1;}
+  .pp td:last-child{text-align:right;font-weight:600;}
+  .pp .btn{display:block;text-align:center;background:var(--ab);color:#fff;font-weight:700;font-size:13px;
+    padding:9px;border-radius:10px;margin-top:8px;cursor:pointer;border:none;width:100%;}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:12px;}
+  .badge.v{background:#dcfce7;color:#15803d;} .badge.n{background:#fef3c7;color:#92400e;}
+  .legend{position:absolute;left:12px;bottom:12px;z-index:800;background:rgba(255,255,255,.94);
+    border-radius:9px;padding:7px 11px;font-size:11px;color:var(--muted);box-shadow:0 1px 4px rgba(0,0,0,.18);}
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;
+    font-size:13px;padding:10px 16px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.3);opacity:0;
+    transition:opacity .25s;z-index:2000;pointer-events:none;}
+</style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden bg-white">
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="v">Veri</span>Map <small>· Thuê nhà Quận 8 (cũ) · TP.HCM</small></div>
+    <a href="app-full.html">Bản full TP.HCM →</a>
+  </div>
 
-  <!-- ===== TOP BAR ===== -->
-  <header class="shrink-0 border-b border-gray-200 bg-white z-[600]">
-    <div class="flex items-center justify-between gap-3 px-4 h-14">
-      <!-- Trái: brand + tab tòa nhà -->
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="font-extrabold text-lg shrink-0"><span style="color:var(--ab)">Veri</span>Map</div>
-        <nav id="bld-tabs" class="hidden lg:flex gap-0.5 text-[13px]"></nav>
-      </div>
-      <!-- Giữa: toggle góc nhìn -->
-      <div id="view-toggle" class="flex bg-gray-100 rounded-full p-1 text-[13px] font-bold shrink-0">
-        <button data-view="tenant" class="px-3 py-1 rounded-full on">👁️ Tenant View</button>
-        <button data-view="b2b" class="px-3 py-1 rounded-full">💰 B2B Revenue</button>
-      </div>
-      <!-- Phải: giá + rating + CTA -->
-      <div class="flex items-center gap-3 shrink-0">
-        <div id="topRight" class="text-right leading-tight hidden sm:block"></div>
-        <button class="btn-ab" id="ctaBtn">Get 3 Live Units</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- ===== MAIN ===== -->
-  <main class="flex-1 flex min-h-0">
-    <!-- Drawer tình báo 30% -->
-    <aside id="drawer" class="w-[370px] shrink-0 border-r border-gray-200 overflow-y-auto bg-white"></aside>
-    <!-- Map 70% -->
-    <div class="relative flex-1 min-w-0">
-      <div id="map"></div>
-      <!-- Floating search + layer pills -->
-      <div class="absolute top-3 left-3 z-[500] flex flex-col gap-2" style="max-width:calc(100% - 1.5rem)">
-        <div class="bg-white rounded-full shadow-lg px-3.5 py-2 flex items-center gap-2 w-[340px] max-w-full">
-          <i data-lucide="search" class="w-4 h-4 text-gray-400 shrink-0"></i>
-          <input id="search" placeholder="Explore dining, coworking, expat marts…"
-                 class="flex-1 outline-none text-sm bg-transparent min-w-0">
+  <div class="main">
+    <aside class="side">
+      <div class="sfilter">
+        <h1 id="s-title">Quận 8 — 50 căn cho thuê</h1>
+        <div class="sub" id="s-sub">Dọc Kênh Đôi · Phạm Thế Hiển · Chánh Hưng</div>
+        <div class="row">
+          <select id="f-seg"><option value="">Mọi loại hình</option></select>
+          <select id="f-price">
+            <option value="0">Mọi mức giá</option>
+            <option value="5000000">Dưới 5tr</option>
+            <option value="8000000">Dưới 8tr</option>
+            <option value="12000000">Dưới 12tr</option>
+            <option value="20000000">Dưới 20tr</option>
+          </select>
         </div>
-        <div id="pills" class="flex gap-1.5 flex-wrap"></div>
-        <div id="filters" class="flex gap-1.5 flex-wrap items-center bg-white/95 rounded-xl shadow px-2.5 py-1.5"></div>
       </div>
-      <!-- Legend nhỏ góc dưới -->
-      <div class="absolute bottom-3 left-3 z-[500] bg-white/90 rounded-lg px-3 py-2 text-[11px] text-gray-500 shadow">
-        Bấm 1 <b>ghim nhà</b> để mở tình báo + vòng đi bộ · đổi <b>góc nhìn</b> ở thanh trên
-      </div>
-    </div>
-  </main>
+      <div class="count" id="count"></div>
+      <div class="list" id="list"></div>
+    </aside>
 
-  <script src="data.js"></script>
-  <script src="app.js"></script>
+    <div class="mapwrap">
+      <div id="map"></div>
+      <div class="legend">Giá = <b>VNĐ/tháng</b> · viền xanh = <b>đã kiểm chứng</b> · bấm ghim để xem chi tiết</div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+<script src="q8_data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var Q = window.Q8_DATA;
+  if(!Q || !Q.units){ document.getElementById('map').innerHTML='<p style="padding:20px">Lỗi: thiếu q8_data.js</p>'; return; }
+
+  // ---- format VNĐ ----
+  function trieu(v){ if(v==null) return '—'; var n=v/1e6;
+    var s=(Number.isInteger(n)?String(n):n.toFixed(1)).replace('.',','); return s+'tr'; }
+  function dong(v){ return v==null?'—':v.toLocaleString('vi-VN')+'đ'; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+
+  // ---- map (chiều cao do #map{inset:0} đảm bảo; vẫn invalidateSize cho chắc) ----
+  var map = L.map('map',{zoomControl:true,attributionControl:true}).setView(Q.area.center, Q.area.zoom);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    {subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap · © CARTO'}).addTo(map);
+  function fix(){ map.invalidateSize(); }
+  setTimeout(fix,200); setTimeout(fix,600);
+  window.addEventListener('load',fix); window.addEventListener('resize',fix);
+
+  // ---- popup HTML ----
+  function popup(u){
+    var vb = u.verified ? '<span class="badge v">✓ Đã kiểm chứng</span>' : '<span class="badge n">Chờ kiểm chứng</span>';
+    return '<div class="pp"><h3>'+esc(u.name)+'</h3>'+
+      '<div class="code">'+esc(u.code)+' · '+esc(u.ward)+' · '+esc(u.street)+'</div>'+
+      '<div class="big">'+trieu(u.rent_vnd)+'<span style="font-size:12px;color:#717171;font-weight:600">/tháng</span></div>'+
+      '<div class="small">'+vb+' · ★ '+u.rating+' ('+u.reviews+' đánh giá)</div>'+
+      '<table>'+
+      row('Loại hình', u.seg_label)+
+      row('Phòng ngủ', u.beds ? (u.beds+' PN') : 'Studio')+
+      row('Diện tích', u.area_m2+' m²')+
+      (u.floor?row('Tầng', 'Tầng '+u.floor):'')+
+      row('Nội thất', u.furnished)+
+      row('Cọc', dong(u.deposit_vnd))+
+      row('Ghi chú', u.note)+
+      '</table>'+
+      '<button class="btn" data-act="'+u.id+'">💬 Gửi yêu cầu xem (Zalo)</button></div>';
+  }
+  function row(k,v){ return '<tr><td style="color:#717171">'+esc(k)+'</td><td>'+esc(v)+'</td></tr>'; }
+
+  // ---- markers ----
+  var markers = {}, selected = null;
+  Q.units.forEach(function(u){
+    var m = L.marker([u.lat,u.lng],{
+      icon: L.divIcon({className:'q8-pin'+(u.verified?' v':''), html:'<div class="q8-dot">'+trieu(u.rent_vnd)+'</div>',
+        iconSize:[54,24], iconAnchor:[27,12]})
+    }).addTo(map);
+    m.bindPopup(popup(u),{maxWidth:280});
+    m.on('click',function(){ select(u.id,false); });
+    m.on('popupopen',function(e){
+      var b=e.popup._contentNode.querySelector('[data-act]');
+      if(b) b.onclick=function(){ toast('✅ (Demo) Đã gửi yêu cầu xem "'+u.name+'" qua Zalo.'); };
+    });
+    markers[u.id]={m:m,u:u};
+  });
+
+  // ---- select ----
+  function select(id, fromList){
+    selected = id;
+    Object.keys(markers).forEach(function(k){
+      var el = markers[k].m.getElement();
+      if(el) el.classList.toggle('on', k===id);
+    });
+    document.querySelectorAll('.uc').forEach(function(c){ c.classList.toggle('on', c.dataset.id===id); });
+    var o = markers[id];
+    map.flyTo([o.u.lat,o.u.lng], Math.max(map.getZoom(),16), {duration:.6});
+    o.m.openPopup();
+    if(fromList){ var card=document.querySelector('.uc[data-id="'+id+'"]'); if(card) card.scrollIntoView({block:'nearest'}); }
+  }
+
+  // ---- sidebar list + filters ----
+  var fseg = document.getElementById('f-seg');
+  var segset = {};
+  Q.units.forEach(function(u){ segset[u.segment]=u.seg_label; });
+  Object.keys(segset).forEach(function(k){
+    var o=document.createElement('option'); o.value=k; o.textContent=segset[k]; fseg.appendChild(o);
+  });
+
+  var filt = { seg:'', price:0 };
+  function pass(u){
+    if(filt.seg && u.segment!==filt.seg) return false;
+    if(filt.price && u.rent_vnd>filt.price) return false;
+    return true;
+  }
+  function render(){
+    var list=document.getElementById('list'); var html=''; var n=0;
+    Q.units.forEach(function(u){
+      var show = pass(u);
+      var el = markers[u.id].m.getElement(); if(el) el.style.display = show?'':'none';
+      // ẩn marker khỏi tương tác khi lọc
+      if(markers[u.id].m._icon) markers[u.id].m._icon.style.display = show?'':'none';
+      if(!show) return;
+      n++;
+      html += '<div class="uc'+(u.id===selected?' on':'')+'" data-id="'+u.id+'">'+
+        '<div class="r1"><div class="nm">'+esc(u.name)+'</div><div class="pr">'+trieu(u.rent_vnd)+'</div></div>'+
+        '<div class="r2"><span class="chip'+(u.verified?' v':'')+'">'+(u.verified?'✓ Thật':'Chờ KC')+'</span>'+
+        '<span>'+esc(u.seg_label)+'</span><span>· '+(u.beds?u.beds+'PN':'Studio')+' · '+u.area_m2+'m²</span>'+
+        '<span>· ★'+u.rating+'</span><span>· '+esc(u.ward)+'</span></div></div>';
+    });
+    list.innerHTML = html;
+    document.getElementById('count').textContent = n+' / '+Q.units.length+' căn · giá VNĐ/tháng';
+    list.querySelectorAll('.uc').forEach(function(c){ c.onclick=function(){ select(c.dataset.id,true); }; });
+  }
+  fseg.onchange=function(e){ filt.seg=e.target.value; render(); };
+  document.getElementById('f-price').onchange=function(e){ filt.price=+e.target.value; render(); };
+
+  // ---- toast ----
+  var tt=document.getElementById('toast'), th;
+  function toast(m){ tt.textContent=m; tt.style.opacity='1'; clearTimeout(th); th=setTimeout(function(){tt.style.opacity='0';},3200); }
+
+  render();
+})();
+</script>
 </body>
 </html>

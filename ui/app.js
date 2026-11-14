@@ -33,6 +33,10 @@
   // ---------- map ----------
   const map = L.map("map", { zoomControl: true, attributionControl: false }).setView(D.area.center, D.area.zoom);
   L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 20, subdomains: "abcd" }).addTo(map);
+  // map có thể init trước khi layout ổn (Tailwind CDN trễ) -> ép tính lại kích thước
+  const _fix = () => map.invalidateSize();
+  setTimeout(_fix, 250); setTimeout(_fix, 700);
+  window.addEventListener("load", _fix); window.addEventListener("resize", _fix);
 
   // POI markers
   D.pois.forEach((p) => {

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VeriMap Rental OS — Thảo Điền</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-white">
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="shrink-0 border-b border-gray-200 bg-white z-[600]">
+    <div class="flex items-center justify-between gap-3 px-4 h-14">
+      <!-- Trái: brand + tab tòa nhà -->
+      <div class="flex items-center gap-4 min-w-0">
+        <div class="font-extrabold text-lg shrink-0"><span style="color:var(--ab)">Veri</span>Map</div>
+        <nav id="bld-tabs" class="hidden lg:flex gap-0.5 text-[13px]"></nav>
+      </div>
+      <!-- Giữa: toggle góc nhìn -->
+      <div id="view-toggle" class="flex bg-gray-100 rounded-full p-1 text-[13px] font-bold shrink-0">
+        <button data-view="tenant" class="px-3 py-1 rounded-full on">👁️ Tenant View</button>
+        <button data-view="b2b" class="px-3 py-1 rounded-full">💰 B2B Revenue</button>
+      </div>
+      <!-- Phải: giá + rating + CTA -->
+      <div class="flex items-center gap-3 shrink-0">
+        <div id="topRight" class="text-right leading-tight hidden sm:block"></div>
+        <button class="btn-ab" id="ctaBtn">Get 3 Live Units</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <main class="flex-1 flex min-h-0">
+    <!-- Drawer tình báo 30% -->
+    <aside id="drawer" class="w-[370px] shrink-0 border-r border-gray-200 overflow-y-auto bg-white"></aside>
+    <!-- Map 70% -->
+    <div class="relative flex-1 min-w-0">
+      <div id="map"></div>
+      <!-- Floating search + layer pills -->
+      <div class="absolute top-3 left-3 z-[500] flex flex-col gap-2" style="max-width:calc(100% - 1.5rem)">
+        <div class="bg-white rounded-full shadow-lg px-3.5 py-2 flex items-center gap-2 w-[340px] max-w-full">
+          <i data-lucide="search" class="w-4 h-4 text-gray-400 shrink-0"></i>
+          <input id="search" placeholder="Explore dining, coworking, expat marts…"
+                 class="flex-1 outline-none text-sm bg-transparent min-w-0">
+        </div>
+        <div id="pills" class="flex gap-1.5 flex-wrap"></div>
+        <div id="filters" class="flex gap-1.5 flex-wrap items-center bg-white/95 rounded-xl shadow px-2.5 py-1.5"></div>
+      </div>
+      <!-- Legend nhỏ góc dưới -->
+      <div class="absolute bottom-3 left-3 z-[500] bg-white/90 rounded-lg px-3 py-2 text-[11px] text-gray-500 shadow">
+        Bấm 1 <b>ghim nhà</b> để mở tình báo + vòng đi bộ · đổi <b>góc nhìn</b> ở thanh trên
+      </div>
+    </div>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
