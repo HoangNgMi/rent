@@ -32,7 +32,11 @@
 
   // ---------- map ----------
   const map = L.map("map", { zoomControl: true, attributionControl: false }).setView(D.area.center, D.area.zoom);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 20, subdomains: "abcd" }).addTo(map);
+  // Nền: Esri World Street Map (KHÔNG cần API key; CartoDB free đã đòi key). Dự phòng: OSM.de.
+  const _esri = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Tiles © Esri" }).addTo(map);
+  const _osmde = L.tileLayer("https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png", { subdomains: "abc", maxZoom: 19, attribution: "© OpenStreetMap" });
+  let _fb = false;
+  _esri.on("tileerror", () => { if (!_fb) { _fb = true; map.removeLayer(_esri); _osmde.addTo(map); } });
   // map có thể init trước khi layout ổn (Tailwind CDN trễ) -> ép tính lại kích thước
   const _fix = () => map.invalidateSize();
   setTimeout(_fix, 250); setTimeout(_fix, 700);

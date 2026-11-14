@@ -125,8 +125,13 @@
 
   // ---- map (chiều cao do #map{inset:0} đảm bảo; vẫn invalidateSize cho chắc) ----
   var map = L.map('map',{zoomControl:true,attributionControl:true}).setView(Q.area.center, Q.area.zoom);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    {subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap · © CARTO'}).addTo(map);
+  // Nền: Esri World Street Map (KHÔNG cần API key). Dự phòng tự động: OSM.de nếu Esri lỗi tile.
+  var esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:19, attribution:'Tiles © Esri'}).addTo(map);
+  var osmde = L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',
+    {subdomains:'abc', maxZoom:19, attribution:'© OpenStreetMap'});
+  var _fellback = false;
+  esri.on('tileerror', function(){ if(!_fellback){ _fellback=true; map.removeLayer(esri); osmde.addTo(map); } });
   function fix(){ map.invalidateSize(); }
   setTimeout(fix,200); setTimeout(fix,600);
   window.addEventListener('load',fix); window.addEventListener('resize',fix);
