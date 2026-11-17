@@ -1,14 +1,13 @@
 #!/bin/sh
 # ============================================================
 # pre-commit — KHIÊN "CHỐT CHẶN TỰ ĐỘNG TUYỆT ĐỐI" (bản RENT)
+# CARVE-OUT RENT: ui/data.js ĐƯỢC PHÉP (synthetic · pseudonymized · cần cho demo tĩnh).
 # Bật:  git config core.hooksPath hooks
 # Lớp A: chặn theo TÊN file (data/secret).  Lớp B: quét NỘI DUNG dòng staged (PII/secret/đường dẫn user).
-# CARVE-OUT RENT: ui/data.js ĐƯỢC PHÉP (synthetic · pseudonymized · cần cho demo tĩnh) —
-#   nhưng Lớp B VẪN quét nội dung data.js (an toàn kép). Mọi data.js khác vẫn bị chặn.
-# Fail-safe: thiếu python -> CHẶN. Vượt khẩn cấp: --no-verify (tự chịu trách nhiệm).
+# Fail-safe: thiếu python -> CHẶN (không để lọt). Vượt khẩn cấp: --no-verify (tự chịu trách nhiệm).
 # ============================================================
 
-# ---- Lớp A: tên file (carve-out ui/data.js) ----
+# ---- Lớp A: tên file ----
 blocked=$(git diff --cached --name-only --diff-filter=ACM \
   | grep -Ei '\.(xlsx|xlsm|csv|tsv|key|pem|pfx|zip|sqlite|sqlite3|db)$|(^|/)data\.js$|(^|/)\.env($|\.)|(^|/)(rawdata|cleaned|cost|private|_VAULT)/|secret|token|credential' \
   | grep -vEi '\.example$|^ui/data\.js$')
@@ -22,7 +21,7 @@ if [ -n "$blocked" ]; then
   exit 1
 fi
 
-# ---- Lớp B: nội dung dòng staged (quét CẢ ui/data.js) ----
+# ---- Lớp B: nội dung dòng staged ----
 command -v python >/dev/null 2>&1 || { echo "  ✘ CHẶN: thiếu 'python' để quét nội dung (fail-safe)."; exit 1; }
 
 python - <<'PYEOF'
@@ -37,8 +36,12 @@ PHONE   = re.compile(r"(?<!\d)(?:\+?84|0)\d{9}(?!\d)")
 PERSONAL_EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@(?:gmail|outlook|yahoo|hotmail|icloud|proton(?:mail)?|realestatedoc)\.[A-Za-z.]{2,}", re.I)
 APIKEY  = re.compile(r"(sk-[A-Za-z0-9]{12,}|AIza[A-Za-z0-9_\-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[A-Z0-9]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)")
 SECRET_ASSIGN = re.compile(r"(?i)\b(api[_-]?key|secret|token|password|passwd|bearer)\b\s*[:=]\s*['\"][^'\"]{8,}['\"]")
-USERPATH = re.compile(r"[A-Za-z]:\\\\?Users\\\\?(?!(?:<|%|USERNAME|username|user>|you\b))[A-Za-z0-9._-]+", re.I)
+# Bắt CẢ hai kiểu gạch: ổ:\Users\<username> (nguồn Windows) VÀ ổ:/Users/<username> (python/shell/JS).
+# Bản cũ chỉ bắt dấu gạch-ngược → chính hooks/post-commit của Chủ lọt qua khiên (kiểm 2026-11-17).
+USERPATH = re.compile(r"[A-Za-z]:[\\/]{1,2}Users[\\/]{1,2}(?!(?:<|%|USERNAME|username|user>|you\b))[A-Za-z0-9._-]+", re.I)
 
+# (Không dùng allowlist theo-cả-dòng: nó tạo lỗ "secret thật + chữ 'example' => lọt".
+#  Các regex dưới đã tự loại placeholder: email chỉ bắt gmail/outlook/...; USERPATH loại <username>.)
 CHECKS = [
     ("SĐT", PHONE), ("Email cá nhân", PERSONAL_EMAIL), ("API key/secret", APIKEY),
     ("Gán secret", SECRET_ASSIGN), ("Đường dẫn ổ cứng có tên user", USERPATH),
